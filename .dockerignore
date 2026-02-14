@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+uploads/
+outputs/
+*.pptx
+test_*.py
+.git/
+.gitignore
+README.md

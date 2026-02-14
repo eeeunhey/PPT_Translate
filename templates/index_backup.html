@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT Translate — 한글→영어 번역기</title>
+    <meta name="description" content="PowerPoint 파일의 한글 텍스트를 영어로 번역하고, 원본 서식을 보존합니다.">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <!-- 네비게이션 바 -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="/">
+            <div class="navbar-logo">T</div>
+            <div>
+                <div class="navbar-title">PPT Translate</div>
+                <div class="navbar-subtitle">한글→영어 번역기</div>
+            </div>
+        </a>
+        <span class="navbar-badge">무료 · 서식 보존</span>
+    </nav>
+
+    <main class="container">
+        <!-- 히어로 -->
+        <div class="hero" id="heroSection">
+            <h1>PPTX 파일을 영어로 번역하세요</h1>
+            <p>파일 업로드 하나로 한글→영어 번역이 완료됩니다. 원본 서식을 100% 보존합니다.</p>
+        </div>
+
+        <!-- 업로드 영역 -->
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📄</div>
+            <h3>PPTX 파일을 드래그하거나 클릭하여 업로드</h3>
+            <p>.pptx 파일만 지원 · 최대 50MB</p>
+            <input type="file" id="fileInput" accept=".pptx">
+        </div>
+
+        <!-- 에러 메시지 -->
+        <div class="error-message" id="errorMessage"></div>
+
+        <!-- 진행 상태 -->
+        <div class="progress-section" id="progressSection">
+            <div class="progress-card">
+                <div class="progress-header">
+                    <div class="spinner"></div>
+                    <h3 id="progressTitle">번역 중입니다...</h3>
+                </div>
+                <div class="progress-percent-display" id="progressPercent">0%</div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <p class="progress-step-text" id="progressText">파일 분석 중...</p>
+                <div class="timer-display">
+                    <span>⏱️ 경과 시간:</span>
+                    <span class="timer-value" id="timerValue">0.0초</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 영역 -->
+        <div class="result-section" id="resultSection">
+
+            <!-- 미번역 경고/성공 배너 -->
+            <div id="alertBanner"></div>
+
+            <!-- 통계 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="statSlides">0</div>
+                    <div class="stat-label">슬라이드</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">전체 텍스트</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-success" id="statTranslated">0</div>
+                    <div class="stat-label">번역 성공</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-danger" id="statUntranslated">0</div>
+                    <div class="stat-label">미번역</div>
+                </div>
+            </div>
+
+            <!-- 번역 완료율 -->
+            <div class="completion-bar">
+                <div class="completion-header">
+                    <span class="completion-label">번역 완료율</span>
+                    <span class="completion-percent" id="completionPercent">0%</span>
+                </div>
+                <div class="completion-track">
+                    <div class="completion-fill" id="completionFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 소요시간 -->
+            <div id="timingBar"></div>
+
+            <!-- 액션 버튼 -->
+            <div class="actions">
+                <a class="btn btn-primary" id="downloadBtn" href="#" download>⬇️ 번역된 PPT 다운로드</a>
+                <button class="btn btn-secondary" onclick="resetUI()">📂 새 파일 번역</button>
+            </div>
+
+            <!-- 미리보기 탭 -->
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-tab="slideview" onclick="switchPreviewTab('slideview')">
+                    🖥️ 슬라이드 미리보기
+                </button>
+                <button class="preview-tab" data-tab="comparison" onclick="switchPreviewTab('comparison')">
+                    📊 비교 뷰
+                </button>
+                <button class="preview-tab" data-tab="untranslated" onclick="switchPreviewTab('untranslated')">
+                    ⚠️ 미번역 확인 <span id="untranslatedBadge"></span>
+                </button>
+            </div>
+
+            <!-- 슬라이드 네비게이션 -->
+            <div class="slide-nav" id="slideNav">
+                <button class="slide-nav-btn" id="prevSlideBtn" onclick="prevSlide()">◀</button>
+                <span class="slide-nav-label" id="slideNavLabel">슬라이드 1 / 1</span>
+                <button class="slide-nav-btn" id="nextSlideBtn" onclick="nextSlide()">▶</button>
+            </div>
+
+            <!-- 듀얼뷰 미리보기 (원본 vs 번역) -->
+            <div class="dual-view-container" id="dualViewContainer" style="display:none;">
+                <div class="slide-view-panel">
+                    <h3>📄 Original (원본)</h3>
+                    <div id="originalSlide"></div>
+                </div>
+                <div class="slide-view-panel">
+                    <h3>🌐 Translated (번역)</h3>
+                    <div id="translatedSlide"></div>
+                </div>
+            </div>
+
+            <!-- 기존 미리보기 (비교뷰, 미번역뷰용) -->
+            <div class="preview-content" id="previewContent"></div>
+        </div>
+    </main>
+
+    <!-- 번역 근거 모달 -->
+    <div class="modal-overlay" id="rationaleModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔍 번역 근거</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="rationaleBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 글로벌 상태
+        // ============================================================
+        let translationData = null;
+        let currentSlide = 0;
+        let currentTab = 'slideview';
+        let timerInterval = null;
+        let startTime = null;
+
+        // ============================================================
+        // 업로드 핸들러
+        // ============================================================
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const errorMessage = document.getElementById('errorMessage');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.classList.remove('dragover'); });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault(); uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+
+        // ============================================================
+        // 타이머
+        // ============================================================
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                document.getElementById('timerValue').textContent =
+                    ((Date.now() - startTime) / 1000).toFixed(1) + '초';
+            }, 100);
+        }
+        function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } }
+
+        // ============================================================
+        // 파일 처리
+        // ============================================================
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.pptx')) { showError('PPTX 파일만 지원합니다.'); return; }
+            if (file.size > 50 * 1024 * 1024) { showError('파일 크기가 50MB를 초과합니다.'); return; }
+
+            hideError(); showProgress(); startTimer();
+            updateProgress(10, '파일 업로드 중...');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', { method: 'POST', body: formData })
+                .then(r => { updateProgress(40, '서버에서 번역 처리 중...'); return r.json(); })
+                .then(data => {
+                    stopTimer();
+                    if (data.success) {
+                        updateProgress(100, '번역 완료!');
+                        setTimeout(() => { translationData = data; showResults(data); }, 400);
+                    } else {
+                        hideProgress(); showError(data.error || '오류가 발생했습니다.');
+                    }
+                })
+                .catch(err => { stopTimer(); hideProgress(); showError('서버 연결 실패. 서버가 실행 중인지 확인하세요.'); });
+        }
+
+        // ============================================================
+        // UI 제어
+        // ============================================================
+        function showError(msg) { errorMessage.textContent = msg; errorMessage.classList.add('active'); }
+        function hideError() { errorMessage.classList.remove('active'); }
+        function showProgress() { document.getElementById('progressSection').classList.add('active'); uploadZone.classList.add('uploading'); }
+        function hideProgress() { document.getElementById('progressSection').classList.remove('active'); uploadZone.classList.remove('uploading'); }
+        function updateProgress(pct, text) {
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressPercent').textContent = pct + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+        function resetUI() {
+            stopTimer(); hideProgress(); hideError();
+            document.getElementById('resultSection').classList.remove('active');
+            document.getElementById('heroSection').style.display = '';
+            uploadZone.style.display = ''; uploadZone.classList.remove('uploading');
+            fileInput.value = ''; translationData = null; currentSlide = 0; currentTab = 'slideview';
+            document.getElementById('timerValue').textContent = '0.0초';
+            document.getElementById('progressPercent').textContent = '0%';
+        }
+
+        // ============================================================
+        // 슬라이드 네비게이션
+        // ============================================================
+        function prevSlide() { if (currentSlide > 0) { currentSlide--; renderCurrentView(); updateSlideNav(); } }
+        function nextSlide() {
+            if (translationData && currentSlide < translationData.slides.length - 1) {
+                currentSlide++; renderCurrentView(); updateSlideNav();
+            }
+        }
+        function updateSlideNav() {
+            if (!translationData) return;
+            const total = translationData.slides.length;
+            document.getElementById('slideNavLabel').textContent = `슬라이드 ${currentSlide + 1} / ${total}`;
+            document.getElementById('prevSlideBtn').disabled = currentSlide === 0;
+            document.getElementById('nextSlideBtn').disabled = currentSlide >= total - 1;
+        }
+
+        // ============================================================
+        // 탭 전환
+        // ============================================================
+        function switchPreviewTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.preview-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.getElementById('slideNav').style.display = (tab === 'untranslated') ? 'none' : '';
+            renderCurrentView();
+        }
+
+        function renderCurrentView() {
+            if (currentTab === 'slideview') renderSlidePreview(currentSlide);
+            else if (currentTab === 'comparison') renderSlideComparison(currentSlide);
+            else renderUntranslatedView();
+        }
+
+        // ============================================================
+        // 결과 표시
+        // ============================================================
+        function showResults(data) {
+            hideProgress();
+            uploadZone.style.display = 'none';
+            document.getElementById('heroSection').style.display = 'none';
+
+            const stats = data.stats;
+            document.getElementById('statSlides').textContent = stats.total_slides;
+            document.getElementById('statTotal').textContent = stats.total_texts;
+            document.getElementById('statTranslated').textContent = stats.translated_texts;
+            document.getElementById('statUntranslated').textContent = stats.untranslated_texts || 0;
+
+            // 완료율
+            const rate = stats.korean_texts > 0 ? Math.round((stats.translated_texts / stats.korean_texts) * 100) : 100;
+            document.getElementById('completionPercent').textContent = rate + '%';
+            const fill = document.getElementById('completionFill');
+            fill.style.width = rate + '%';
+            if (rate < 100) fill.classList.add('partial');
+
+            // 경고 배너
+            const uc = stats.untranslated_texts || 0;
+            document.getElementById('alertBanner').innerHTML = uc > 0
+                ? `<div class="alert-banner alert-warning"><span class="alert-banner-icon">⚠️</span><span><strong>${uc}개</strong> 텍스트가 번역되지 않았습니다.</span></div>`
+                : `<div class="alert-banner alert-success"><span class="alert-banner-icon">✅</span><span>모든 텍스트가 성공적으로 번역되었습니다!</span></div>`;
+
+            const badge = document.getElementById('untranslatedBadge');
+            badge.textContent = uc > 0 ? `(${uc})` : '(0)';
+
+            // 소요시간
+            const t = data.timing;
+            if (t) {
+                const total = Math.max(t.total_seconds, 0.1);
+                document.getElementById('timingBar').innerHTML = `
+                    <div class="timing-card">
+                        <div class="timing-header">
+                            <span>⏱️</span>
+                            <span class="timing-total-label">총 소요시간</span>
+                            <span class="timing-total-value">${t.total_seconds}초</span>
+                        </div>
+                        <div class="timing-details">
+                            <div class="timing-item"><div class="timing-item-bar" style="width:${Math.max(8, (t.extract_seconds / total) * 100)}%;background:var(--primary);"></div><span class="timing-item-label">📄 텍스트 추출</span><span class="timing-item-value">${t.extract_seconds}초</span></div>
+                            <div class="timing-item"><div class="timing-item-bar" style="width:${Math.max(8, (t.translate_seconds / total) * 100)}%;background:var(--purple);"></div><span class="timing-item-label">🌐 번역 처리</span><span class="timing-item-value">${t.translate_seconds}초</span></div>
+                            <div class="timing-item"><div class="timing-item-bar" style="width:${Math.max(8, (t.ppt_generate_seconds / total) * 100)}%;background:var(--success);"></div><span class="timing-item-label">📦 PPT 생성</span><span class="timing-item-value">${t.ppt_generate_seconds}초</span></div>
+                        </div>
+                    </div>`;
+            }
+
+            document.getElementById('downloadBtn').href = '/download/' + encodeURIComponent(data.filename);
+            document.getElementById('resultSection').classList.add('active');
+            updateSlideNav();
+
+            // 듀얼뷰 초기화 (기본 탭)
+            if (data.slides.length > 0) {
+                switchPreviewTab('slideview');
+            }
+        }
+
+        // ============================================================
+        // 🖥️ 슬라이드 미리보기 (PPT 시각화)
+        // ============================================================
+        function renderSlidePreview(idx) {
+            const slide = translationData.slides[idx];
+            const container = document.getElementById('previewContent');
+            const ratio = translationData.slide_ratio || 1.333;
+
+            if (!slide) { container.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-muted);">슬라이드 없음</p>'; return; }
+
+            const shapesVisual = slide.shapes_visual || [];
+            const slideBg = slide.background || '#ffffff';
+
+            // 번역 결과 맵
+            const resultMap = {};
+            slide.items.forEach(item => { resultMap[item.id] = item; });
+
+            let shapesHtml = '';
+
+            shapesVisual.forEach(sv => {
+                // Shape 스타일
+                const fillColor = sv.fill_color || 'transparent';
+                const textColor = sv.text_color || '#000000';
+                const borderStyle = sv.line ? `${sv.line.width}px solid ${sv.line.color}` : 'none';
+
+                if (sv.type === 'table') {
+                    // 표 렌더링
+                    let tableHtml = '<table class="slide-table">';
+                    const cellMap = {};
+                    sv.texts.forEach(t => {
+                        if (t.cell) {
+                            const key = t.cell;
+                            if (!cellMap[key]) cellMap[key] = [];
+                            const r = resultMap[t.id];
+                            cellMap[key].push({
+                                text: r ? r.translated : t.text,
+                                untranslated: r ? r.untranslated : false,
+                                original: t.text
+                            });
+                        }
+                    });
+
+                    for (let row = 0; row < (sv.rows || 1); row++) {
+                        tableHtml += '<tr>';
+                        for (let col = 0; col < (sv.cols || 1); col++) {
+                            const items = cellMap[`${row},${col}`] || [];
+                            const cellText = items.map(i => {
+                                const cls = i.untranslated ? 'untranslated-text' : '';
+                                return `<span class="${cls}" title="${escapeAttr(i.original)}">${escapeHtml(i.text)}</span>`;
+                            }).join(' ');
+                            tableHtml += `<td>${cellText || '&nbsp;'}</td>`;
+                        }
+                        tableHtml += '</tr>';
+                    }
+                    tableHtml += '</table>';
+
+                    shapesHtml += `<div class="slide-shape" style="left:${sv.left_pct}%;top:${sv.top_pct}%;width:${sv.width_pct}%;height:${sv.height_pct}%;background:${fillColor};border:${borderStyle};">${tableHtml}</div>`;
+                } else {
+                    // 텍스트 박스 렌더링
+                    let textsHtml = '';
+                    sv.texts.forEach(t => {
+                        const r = resultMap[t.id];
+                        const displayText = r ? r.translated : t.text;
+                        const isUntranslated = r ? r.untranslated : false;
+                        const fontSize = Math.max(8, Math.min(t.font_size || 14, 32));
+                        const bold = t.bold ? 'font-weight:700;' : '';
+                        const cls = isUntranslated ? 'untranslated-text' : '';
+
+                        textsHtml += `<div class="slide-text ${cls}" style="font-size:${fontSize * 0.65}px;${bold}color:${textColor};" title="원문: ${escapeAttr(t.text)}">${escapeHtml(displayText)}</div>`;
+                    });
+
+                    shapesHtml += `<div class="slide-shape" style="left:${sv.left_pct}%;top:${sv.top_pct}%;width:${sv.width_pct}%;height:${sv.height_pct}%;background:${fillColor};border:${borderStyle};">${textsHtml}</div>`;
+                }
+            });
+
+            container.innerHTML = `
+                <div class="slide-preview-wrapper">
+                    <div class="slide-canvas" style="aspect-ratio: ${ratio}; background: ${slideBg};">
+                        <div class="slide-number-badge">Slide ${slide.slide_number}</div>
+                        ${shapesHtml || '<div class="slide-empty">텍스트 없음</div>'}
+                    </div>
+                    <div class="slide-preview-hint">💡 텍스트 위에 마우스를 올리면 원문을 볼 수 있습니다. <span class="untranslated-text">빨간 텍스트</span>는 미번역 항목입니다.</div>
+                </div>`;
+        }
+
+        // ============================================================
+        // 🖥️ 듀얼뷰: 원본 슬라이드 렌더링
+        // ============================================================
+        function renderOriginalSlide(idx) {
+            const slide = translationData.slides[idx];
+            const container = document.getElementById('originalSlide');
+            const ratio = translationData.slide_ratio || 1.333;
+
+            if (!slide) { container.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-muted);">슬라이드 없음</p>'; return; }
+
+            const shapesVisual = slide.shapes_visual || [];
+            const slideBg = slide.background || '#ffffff';
+
+            let shapesHtml = '';
+
+            shapesVisual.forEach(sv => {
+                const fillColor = sv.fill_color || 'transparent';
+                const textColor = sv.text_color || '#000000';
+                const borderStyle = sv.line ? `${sv.line.width}px solid ${sv.line.color}` : 'none';
+
+                if (sv.type === 'table') {
+                    let tableHtml = '<table class="slide-table">';
+                    const cellMap = {};
+                    sv.texts.forEach(t => {
+                        if (t.cell) {
+                            const key = t.cell;
+                            if (!cellMap[key]) cellMap[key] = [];
+                            cellMap[key].push(t.text); // 원본 텍스트만
+                        }
+                    });
+
+                    for (let row = 0; row < (sv.rows || 1); row++) {
+                        tableHtml += '<tr>';
+                        for (let col = 0; col < (sv.cols || 1); col++) {
+                            const items = cellMap[`${row},${col}`] || [];
+                            const cellText = items.map(text => escapeHtml(text)).join(' ');
+                            tableHtml += `<td>${cellText || '&nbsp;'}</td>`;
+                        }
+                        tableHtml += '</tr>';
+                    }
+                    tableHtml += '</table>';
+
+                    shapesHtml += `<div class="slide-shape" style="left:${sv.left_pct}%;top:${sv.top_pct}%;width:${sv.width_pct}%;height:${sv.height_pct}%;background:${fillColor};border:${borderStyle};">${tableHtml}</div>`;
+                } else {
+                    let textsHtml = '';
+                    sv.texts.forEach(t => {
+                        const fontSize = Math.max(8, Math.min(t.font_size || 14, 32));
+                        const bold = t.bold ? 'font-weight:700;' : '';
+                        textsHtml += `<div class="slide-text" style="font-size:${fontSize * 0.65}px;${bold}color:${textColor};">${escapeHtml(t.text)}</div>`;
+                    });
+
+                    shapesHtml += `<div class="slide-shape" style="left:${sv.left_pct}%;top:${sv.top_pct}%;width:${sv.width_pct}%;height:${sv.height_pct}%;background:${fillColor};border:${borderStyle};">${textsHtml}</div>`;
+                }
+            });
+
+            container.innerHTML = `
+                <div class="slide-preview-wrapper">
+                    <div class="slide-canvas" style="aspect-ratio: ${ratio}; background: ${slideBg};">
+                        <div class="slide-number-badge">Slide ${slide.slide_number}</div>
+                        ${shapesHtml || '<div class="slide-empty">텍스트 없음</div>'}
+                    </div>
+                </div>`;
+        }
+
+        // ============================================================
+        // 🌐 듀얼뷰: 번역 슬라이드 렌더링
+        // ============================================================
+        function renderTranslatedSlide(idx) {
+            const slide = translationData.slides[idx];
+            const container = document.getElementById('translatedSlide');
+            const ratio = translationData.slide_ratio || 1.333;
+
+            if (!slide) { container.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-muted);">슬라이드 없음</p>'; return; }
+
+            const shapesVisual = slide.shapes_visual || [];
+            const slideBg = slide.background || '#ffffff';
+            const resultMap = {};
+            slide.items.forEach(item => { resultMap[item.id] = item; });
+
+            let shapesHtml = '';
+
+            shapesVisual.forEach(sv => {
+                const fillColor = sv.fill_color || 'transparent';
+                const textColor = sv.text_color || '#000000';
+                const borderStyle = sv.line ? `${sv.line.width}px solid ${sv.line.color}` : 'none';
+
+                if (sv.type === 'table') {
+                    let tableHtml = '<table class="slide-table">';
+                    const cellMap = {};
+                    sv.texts.forEach(t => {
+                        if (t.cell) {
+                            const key = t.cell;
+                            if (!cellMap[key]) cellMap[key] = [];
+                            const r = resultMap[t.id];
+                            cellMap[key].push({
+                                text: r ? r.translated : t.text,
+                                untranslated: r ? r.untranslated : false
+                            });
+                        }
+                    });
+
+                    for (let row = 0; row < (sv.rows || 1); row++) {
+                        tableHtml += '<tr>';
+                        for (let col = 0; col < (sv.cols || 1); col++) {
+                            const items = cellMap[`${row},${col}`] || [];
+                            const cellText = items.map(i => {
+                                const cls = i.untranslated ? 'untranslated-text' : '';
+                                return `<span class="${cls}">${escapeHtml(i.text)}</span>`;
+                            }).join(' ');
+                            tableHtml += `<td>${cellText || '&nbsp;'}</td>`;
+                        }
+                        tableHtml += '</tr>';
+                    }
+                    tableHtml += '</table>';
+
+                    shapesHtml += `<div class="slide-shape" style="left:${sv.left_pct}%;top:${sv.top_pct}%;width:${sv.width_pct}%;height:${sv.height_pct}%;background:${fillColor};border:${borderStyle};">${tableHtml}</div>`;
+                } else {
+                    let textsHtml = '';
+                    sv.texts.forEach(t => {
+                        const r = resultMap[t.id];
+                        const displayText = r ? r.translated : t.text;
+                        const isUntranslated = r ? r.untranslated : false;
+                        const fontSize = Math.max(8, Math.min(t.font_size || 14, 32));
+                        const bold = t.bold ? 'font-weight:700;' : '';
+                        const cls = isUntranslated ? 'untranslated-text' : '';
+
+                        textsHtml += `<div class="slide-text ${cls}" style="font-size:${fontSize * 0.65}px;${bold}color:${textColor};">${escapeHtml(displayText)}</div>`;
+                    });
+
+                    shapesHtml += `<div class="slide-shape" style="left:${sv.left_pct}%;top:${sv.top_pct}%;width:${sv.width_pct}%;height:${sv.height_pct}%;background:${fillColor};border:${borderStyle};">${textsHtml}</div>`;
+                }
+            });
+
+            container.innerHTML = `
+                <div class="slide-preview-wrapper">
+                    <div class="slide-canvas" style="aspect-ratio: ${ratio}; background: ${slideBg};">
+                        <div class="slide-number-badge">Slide ${slide.slide_number}</div>
+                        ${shapesHtml || '<div class="slide-empty">텍스트 없음</div>'}
+                    </div>
+                    <div class="slide-preview-hint">💡 <span class="untranslated-text">빨간 텍스트</span>는 미번역 항목입니다.</div>
+                </div>`;
+        }
+
+        // ============================================================
+        // 📊 비교 뷰
+        // ============================================================
+        function renderSlideComparison(idx) {
+            const slide = translationData.slides[idx];
+            const container = document.getElementById('previewContent');
+            if (!slide || slide.items.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:40px;">텍스트 없음</p>';
+                return;
+            }
+
+            let html = `<table class="comparison-table"><thead><tr><th>원본 (한글)</th><th>번역 (영어)</th><th>상태</th></tr></thead><tbody>`;
+
+            slide.items.forEach((item, i) => {
+                const rowCls = item.untranslated ? ' row-untranslated' : '';
+                const tdCls = item.untranslated ? ' is-untranslated' : '';
+                let status;
+                if (item.untranslated) {
+                    status = '<span class="badge badge-untranslated">⚠️ 미번역</span>';
+                } else if (item.word_breakdown && item.word_breakdown.length > 0) {
+                    status = `<span class="badge ${getBadgeClass(item.translation_type)}">${item.translation_type}</span><br><button class="btn-rationale" onclick="showRationale(${idx},${i})" style="margin-top:6px;">🔍 근거</button>`;
+                } else {
+                    status = '<span class="badge badge-keep">원문 유지</span>';
+                }
+                html += `<tr class="${rowCls}"><td class="col-original">${escapeHtml(item.original)}</td><td class="col-translated${tdCls}">${escapeHtml(item.translated)}</td><td class="col-status">${status}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // ⚠️ 미번역 뷰
+        // ============================================================
+        function renderUntranslatedView() {
+            const container = document.getElementById('previewContent');
+            let items = [];
+            translationData.slides.forEach(sl => sl.items.forEach(i => { if (i.untranslated) items.push({ ...i, slide_number: sl.slide_number }); }));
+
+            if (items.length === 0) {
+                container.innerHTML = `<div style="text-align:center;padding:60px;"><div style="font-size:3rem;margin-bottom:16px;">🎉</div><h3 style="color:var(--success);">미번역 항목이 없습니다!</h3><p style="color:var(--text-muted);">모든 한글 텍스트가 영어로 번역되었습니다.</p></div>`;
+                return;
+            }
+
+            let html = `<table class="comparison-table"><thead><tr><th>슬라이드</th><th>원본</th><th>결과</th><th>위치</th></tr></thead><tbody>`;
+            items.forEach(i => {
+                html += `<tr class="row-untranslated"><td style="text-align:center;font-weight:600;">${i.slide_number}</td><td class="col-original">${escapeHtml(i.original)}</td><td class="col-translated is-untranslated">${escapeHtml(i.translated)}</td><td style="font-size:0.82rem;color:var(--text-muted);">${escapeHtml(i.shape)}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function getBadgeClass(type) {
+            if (!type) return 'badge-keep';
+            if (type.includes('직역') || type.includes('Literal')) return 'badge-literal';
+            if (type.includes('의역') || type.includes('Liberal')) return 'badge-liberal';
+            if (type.includes('혼합') || type.includes('Mixed')) return 'badge-mixed';
+            if (type.includes('미번역')) return 'badge-untranslated';
+            return 'badge-keep';
+        }
+
+        // ============================================================
+        // 번역 근거 모달
+        // ============================================================
+        function showRationale(sIdx, iIdx) {
+            const item = translationData.slides[sIdx].items[iIdx];
+            const body = document.getElementById('rationaleBody');
+            let html = `<div class="rationale-section"><h4>📝 원문</h4><div class="rationale-original">${escapeHtml(item.original)}</div></div>
+                        <div class="rationale-section"><h4>🌐 번역</h4><div class="rationale-translated">${escapeHtml(item.translated)}</div></div>`;
+            if (item.word_breakdown && item.word_breakdown.length > 0) {
+                html += `<div class="rationale-section"><h4>📖 단어별 의미</h4><table class="word-breakdown-table"><thead><tr><th>한글</th><th>영어</th><th>역할</th></tr></thead><tbody>`;
+                item.word_breakdown.forEach(w => { html += `<tr><td class="word-ko">${escapeHtml(w.korean)}</td><td class="word-en">${escapeHtml(w.english)}</td><td class="word-role">${escapeHtml(w.role)}</td></tr>`; });
+                html += '</tbody></table></div>';
+            }
+            html += `<div class="rationale-section"><h4>ℹ️ 번역 방식</h4><p><span class="badge ${getBadgeClass(item.translation_type)}" style="font-size:0.82rem;padding:5px 14px;">${item.translation_type}</span></p></div>`;
+            body.innerHTML = html;
+            document.getElementById('rationaleModal').classList.add('active');
+        }
+        function closeModal() { document.getElementById('rationaleModal').classList.remove('active'); }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+        document.getElementById('rationaleModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+        // ============================================================
+        // 탭 전환 및 네비게이션
+        // ============================================================
+        function switchPreviewTab(tab) {
+            currentTab = tab;
+
+            // 탭 활성화
+            document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+            if (tab === 'slideview') {
+                // 듀얼뷰 표시
+                document.getElementById('dualViewContainer').style.display = 'grid';
+                document.getElementById('previewContent').style.display = 'none';
+                document.getElementById('slideNav').style.display = 'flex';
+
+                renderOriginalSlide(currentSlide);
+                renderTranslatedSlide(currentSlide);
+            } else {
+                // 비교/미번역 뷰 표시
+                document.getElementById('dualViewContainer').style.display = 'none';
+                document.getElementById('previewContent').style.display = 'block';
+                document.getElementById('slideNav').style.display = tab === 'comparison' ? 'flex' : 'none';
+
+                if (tab === 'comparison') {
+                    renderSlideComparison(currentSlide);
+                } else if (tab === 'untranslated') {
+                    renderUntranslatedView();
+                }
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlideNav();
+
+                if (currentTab === 'slideview') {
+                    renderOriginalSlide(currentSlide);
+                    renderTranslatedSlide(currentSlide);
+                } else if (currentTab === 'comparison') {
+                    renderSlideComparison(currentSlide);
+                }
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < translationData.slides.length - 1) {
+                currentSlide++;
+                updateSlideNav();
+
+                if (currentTab === 'slideview') {
+                    renderOriginalSlide(currentSlide);
+                    renderTranslatedSlide(currentSlide);
+                } else if (currentTab === 'comparison') {
+                    renderSlideComparison(currentSlide);
+                }
+            }
+        }
+
+        function updateSlideNav() {
+            const total = translationData.slides.length;
+            document.getElementById('slideNavLabel').textContent = `슬라이드 ${currentSlide + 1} / ${total}`;
+            document.getElementById('prevSlideBtn').disabled = currentSlide === 0;
+            document.getElementById('nextSlideBtn').disabled = currentSlide === total - 1;
+        }
+
+        function resetUI() {
+            currentSlide = 0;
+            currentTab = 'slideview';
+            translationData = null;
+            document.getElementById('uploadSection').classList.remove('processing');
+            document.getElementById('resultSection').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+            document.getElementById('errorMessage').textContent = '';
+            document.getElementById('errorMessage').classList.remove('active');
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        // 키보드 단축키 (좌우 화살표)
+        document.addEventListener('keydown', e => {
+            if (document.getElementById('resultSection').classList.contains('active')) {
+                if (e.key === 'ArrowLeft') prevSlide();
+                if (e.key === 'ArrowRight') nextSlide();
+            }
+        });
+
+        // ============================================================
+        // 유틸리티
+        // ============================================================
+        function escapeHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function escapeAttr(s) { if (!s) return ''; return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;'); }
+    </script>
+
+</body>
+
+</html>

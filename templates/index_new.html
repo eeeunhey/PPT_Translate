@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT Translator — Professional Presentation Translation Service</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero-section">
+        <div class="hero-container">
+            <div class="hero-badge">🚀 AI-Powered Translation</div>
+            <h1 class="hero-title">
+                파워포인트 번역,<br>
+                <span class="gradient-text">이제 한 번의 클릭으로</span>
+            </h1>
+            <p class="hero-description">
+                원본 디자인을 100% 보존하며 한국어와 영어를 빠르고 정확하게 번역합니다.<br>
+                드래그 앤 드롭만으로 전문가급 번역을 경험하세요.
+            </p>
+            <div class="hero-actions">
+                <button class="btn-hero-primary" onclick="document.getElementById('fileInput').click()">
+                    ⬆️ PPT 파일 업로드하기
+                </button>
+                <a href="#features" class="btn-hero-secondary">기능 둘러보기</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 기능 하이라이트 -->
+    <section id="features" class="features-section">
+        <div class="section-container">
+            <h2 class="section-title">왜 PPT Translator인가요?</h2>
+            <p class="section-subtitle">번역 작업이 이렇게 쉬울 수 없습니다</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>원본 디자인 100% 보존</h3>
+                    <p>폰트, 색상, 레이아웃, 표, 차트까지 모든 디자인 요소를 그대로 유지합니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h3>듀얼뷰 미리보기</h3>
+                    <p>원본과 번역을 나란히 비교하며 실시간으로 결과를 확인할 수 있습니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>양방향 번역</h3>
+                    <p>한국어 → 영어, 영어 → 한국어 모두 지원합니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>번역 근거 제공</h3>
+                    <p>단어별 의미 분해와 번역 방식(직역/의역)을 함께 확인할 수 있습니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>표와 차트 지원</h3>
+                    <p>복잡한 표, 차트 내부의 텍스트도 정확하게 번역합니다.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>미번역 감지</h3>
+                    <p>번역되지 않은 항목을 자동으로 감지하고 하이라이트합니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 업로드 섹션 -->
+    <section class="upload-section" id="uploadSection">
+        <div class="section-container">
+            <div class="upload-card">
+                <div class="language-selector-wrapper">
+                    <h3 class="upload-title">번역 방향 선택</h3>
+                    <div class="language-selector">
+                        <div class="language-option" data-direction="ko-en">
+                            <div class="language-flag">🇰🇷</div>
+                            <div class="language-label">한국어</div>
+                            <div class="language-arrow">→</div>
+                            <div class="language-flag">🇺🇸</div>
+                            <div class="language-label">영어</div>
+                        </div>
+                        <div class="language-option" data-direction="en-ko">
+                            <div class="language-flag">🇺🇸</div>
+                            <div class="language-label">영어</div>
+                            <div class="language-arrow">→</div>
+                            <div class="language-flag">🇰🇷</div>
+                            <div class="language-label">한국어</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="fileInput" accept=".pptx" style="display:none;">
+                    <div class="upload-icon">📎</div>
+                    <h3 class="upload-zone-title">PPT 파일을 드래그하거나 클릭하세요</h3>
+                    <p class="upload-zone-subtitle">지원 형식: .pptx (PowerPoint 2007 이상)</p>
+                    <div class="upload-zone-hint">또는 파일 선택 버튼을 클릭하세요</div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <!-- 프로그레스 -->
+                <div class="progress-container" id="progressContainer" style="display:none;">
+                    <div class="progress-header">
+                        <span class="progress-label" id="progressLabel">업로드 중...</span>
+                        <span class="progress-percent" id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                    </div>
+                    <div class="progress-timer" id="timerValue">0초</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 결과 섹션 (기존과 동일) -->
+    <main id="resultSection" class="result-section">
+        <div class="result-container">
+            <!-- 통계 -->
+            <div id="statsBar"></div>
+
+            <!-- 미번역 경고 -->
+            <div id="untranslatedAlert"></div>
+
+            <!-- 소요시간 -->
+            <div id="timingBar"></div>
+
+            <!-- 액션 버튼 -->
+            <div class="actions">
+                <a class="btn btn-primary" id="downloadBtn" href="#" download>⬇️ 번역된 PPT 다운로드</a>
+                <button class="btn btn-secondary" onclick="resetUI()">📂 새 파일 번역</button>
+            </div>
+
+            <!-- 미리보기 탭 -->
+            <div class="preview-tabs">
+                <button class="preview-tab active" data-tab="slideview" onclick="switchPreviewTab('slideview')">
+                    🖥️ 슬라이드 미리보기
+                </button>
+                <button class="preview-tab" data-tab="comparison" onclick="switchPreviewTab('comparison')">
+                    📊 비교 뷰
+                </button>
+                <button class="preview-tab" data-tab="untranslated" onclick="switchPreviewTab('untranslated')">
+                    ⚠️ 미번역 확인 <span id="untranslatedBadge"></span>
+                </button>
+            </div>
+
+            <!-- 슬라이드 네비게이션 -->
+            <div class="slide-nav" id="slideNav">
+                <button class="slide-nav-btn" id="prevSlideBtn" onclick="prevSlide()">◀</button>
+                <span class="slide-nav-label" id="slideNavLabel">슬라이드 1 / 1</span>
+                <button class="slide-nav-btn" id="nextSlideBtn" onclick="nextSlide()">▶</button>
+            </div>
+
+            <!-- 듀얼뷰 미리보기 -->
+            <div class="dual-view-container" id="dualViewContainer" style="display:none;">
+                <div class="slide-view-panel">
+                    <h3>📄 Original (원본)</h3>
+                    <div id="originalSlide"></div>
+                </div>
+                <div class="slide-view-panel">
+                    <h3>🌐 Translated (번역)</h3>
+                    <div id="translatedSlide"></div>
+                </div>
+            </div>
+
+            <!-- 기존 미리보기 -->
+            <div class="preview-content" id="previewContent"></div>
+        </div>
+    </main>
+
+    <!-- 번역 근거 모달 -->
+    <div class="modal-overlay" id="rationaleModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div class="modal-body" id="rationaleBody"></div>
+        </div>
+    </div>
+
+    <script>
+        let translationData = null;
+        let currentSlide = 0;
+        let currentTab = 'slideview';
+        let timerInterval = null;
+        let startTime = null;
+        let selectedDirection = 'ko-en'; // 기본값
+
+        // 언어 방향 선택
+        document.querySelectorAll('.language-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.language-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                selectedDirection = opt.dataset.direction;
+            });
+        });
+
+        // 기본 선택
+        document.querySelector('[data-direction="ko-en"]').classList.add('selected');
+
+        // 업로드 핸들러
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const errorMessage = document.getElementById('errorMessage');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.classList.remove('dragover'); });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault(); uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                document.getElementById('timerValue').textContent =
+                    ((Date.now() - startTime) / 1000).toFixed(1) + '초';
+            }, 100);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.pptx')) {
+                errorMessage.textContent = '❌ .pptx 파일만 업로드 가능합니다.';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            errorMessage.classList.remove('active');
+            document.getElementById('uploadSection').classList.add('processing');
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('progressLabel').textContent = '파일 업로드 중...';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressBar').style.width = '0%';
+
+            startTimer();
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // 언어 방향 추가
+            const [sourceLang, targetLang] = selectedDirection.split('-');
+            formData.append('source_lang', sourceLang);
+            formData.append('target_lang', targetLang);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    stopTimer();
+                    if (data.success) {
+                        displayResult(data);
+                    } else {
+                        showError(data.message || '번역 중 오류가 발생했습니다.');
+                    }
+                    document.getElementById('uploadSection').classList.remove('processing');
+                    document.getElementById('progressContainer').style.display = 'none';
+                })
+                .catch(error => {
+                    stopTimer();
+                    showError('서버 연결에 실패했습니다: ' + error.message);
+                    document.getElementById('uploadSection').classList.remove('processing');
+                    document.getElementById('progressContainer').style.display = 'none';
+                });
+        }
+
+        function showError(message) {
+            errorMessage.textContent = '❌ ' + message;
+            errorMessage.classList.add('active');
+            setTimeout(() => errorMessage.classList.remove('active'), 5000);
+        }
+
+        function displayResult(data) {
+            translationData = data;
+            currentSlide = 0;
+
+            // 통계
+            const s = data.stats;
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-value">${s.total_slides}</div><div class="stat-label">슬라이드</div></div>
+                    <div class="stat-card"><div class="stat-value">${s.total_texts}</div><div class="stat-label">전체 텍스트</div></div>
+                    <div class="stat-card stat-success"><div class="stat-value">${s.translated_texts}</div><div class="stat-label">번역 완료</div></div>
+                    <div class="stat-card ${s.untranslated_texts === 0 ? 'stat-zero' : 'stat-danger'}"><div class="stat-value">${s.untranslated_texts}</div><div class="stat-label">미번역</div></div>
+                </div>`;
+
+            // 미번역 경고
+            const u = s.untranslated_texts;
+            const rate = ((s.translated_texts / Math.max(s.total_texts, 1)) * 100).toFixed(1);
+            if (u > 0) {
+                document.getElementById('untranslatedAlert').innerHTML = `
+                    <div class="alert-warning">
+                        <span class="alert-icon">⚠️</span>
+                        <div>
+                            <strong>미번역 텍스트 ${u}개 발견</strong>
+                            <p>번역 성공률: ${rate}% — '⚠️ 미번역 확인' 탭에서 상세 내용을 확인하세요.</p>
+                        </div>
+                    </div>`;
+                document.getElementById('untranslatedBadge').textContent = u;
+            } else {
+                document.getElementById('untranslatedAlert').innerHTML = '';
+                document.getElementById('untranslatedBadge').textContent = '';
+            }
+
+            // 타이밍
+            const t = data.timing;
+            if (t) {
+                const total = Math.max(t.total_seconds, 0.1);
+                document.getElementById('timingBar').innerHTML = `
+                    <div class="timing-card">
+                        <div class="timing-header">
+                            <span>⏱️</span>
+                            <span class="timing-total-label">총 소요시간</span>
+                            <span class="timing-total-value">${t.total_seconds}초</span>
+                        </div>
+                        <div class="timing-details">
+                            <div class="timing-item"><div class="timing-item-bar" style="width:${Math.max(8, (t.extract_seconds / total) * 100)}%;background:var(--primary);"></div><span class="timing-item-label">📄 텍스트 추출</span><span class="timing-item-value">${t.extract_seconds}초</span></div>
+                            <div class="timing-item"><div class="timing-item-bar" style="width:${Math.max(8, (t.translate_seconds / total) * 100)}%;background:var(--purple);"></div><span class="timing-item-label">🌐 번역 처리</span><span class="timing-item-value">${t.translate_seconds}초</span></div>
+                            <div class="timing-item"><div class="timing-item-bar" style="width:${Math.max(8, (t.ppt_generate_seconds / total) * 100)}%;background:var(--success);"></div><span class="timing-item-label">📦 PPT 생성</span><span class="timing-item-value">${t.ppt_generate_seconds}초</span></div>
+                        </div>
+                    </div>`;
+            }
+
+            document.getElementById('downloadBtn').href = '/download/' + encodeURIComponent(data.filename);
+            document.getElementById('resultSection').classList.add('active');
+            updateSlideNav();
+
+            // 듀얼뷰 초기화
+            if (data.slides.length > 0) {
+                switchPreviewTab('slideview');
+            }
+        }
+
+        // (나머지 함수들은 이전과 동일 - renderOriginalSlide, renderTranslatedSlide, renderSlideComparison, renderUntranslatedView, switchPreviewTab, prevSlide, nextSlide, updateSlideNav, resetUI, showRationale, closeModal, escapeHtml, escapeAttr 등)
