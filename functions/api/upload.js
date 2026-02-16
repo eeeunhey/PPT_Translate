@@ -1,4 +1,28 @@
-export async function onRequestPost(context) {
+export async function onRequest(context) {
+    // CORS preflight 처리
+    if (context.request.method === 'OPTIONS') {
+        return new Response(null, {
+            status: 204,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Access-Control-Max-Age': '86400',
+            },
+        });
+    }
+
+    // POST 이외 메서드 거부
+    if (context.request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            },
+        });
+    }
+
     const NAS_URL = 'https://ppt-translator.hyehey.synology.me';
 
     try {
@@ -37,17 +61,4 @@ export async function onRequestPost(context) {
             },
         });
     }
-}
-
-// CORS preflight
-export async function onRequestOptions() {
-    return new Response(null, {
-        status: 204,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '86400',
-        },
-    });
 }
