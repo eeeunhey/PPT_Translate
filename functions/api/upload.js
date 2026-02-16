@@ -1,5 +1,5 @@
 export async function onRequestPost(context) {
-    const NAS_URL = 'https://hyehey.synology.me:5113';
+    const NAS_URL = 'https://ppt-translator.hyehey.synology.me';
 
     try {
         // 요청 본문을 ArrayBuffer로 완전히 읽은 후 전달

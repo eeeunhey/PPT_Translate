@@ -1,5 +1,5 @@
 export async function onRequest() {
-    const NAS_URL = 'https://hyehey.synology.me:5113';
+    const NAS_URL = 'https://ppt-translator.hyehey.synology.me';
     let nasStatus = 'unknown';
     let nasError = null;
 
