@@ -96,10 +96,48 @@
         footer a:hover {
             color: #a5b4fc;
         }
+
+        .nav-global {
+            display: flex;
+            gap: 20px;
+            padding: 16px 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-global a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .nav-global a:hover {
+            color: #6366f1;
+        }
+
+        .nav-global .nav-brand {
+            color: #e2e8f0;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-right: auto;
+        }
     </style>
 </head>
 
 <body>
+    <nav class="nav-global">
+        <a href="./" class="nav-brand">PPT Translator</a>
+        <a href="./guide.html">사용 가이드</a>
+        <a href="./tips.html">번역 팁</a>
+        <a href="./how-it-works.html">기술 소개</a>
+        <a href="./faq-detail.html">FAQ</a>
+        <a href="./about.html">소개</a>
+    </nav>
+
     <div class="page-container">
         <a href="./" class="back-link">← PPT Translator로 돌아가기</a>
 
@@ -195,7 +233,11 @@
     <footer>
         <div style="margin-bottom:12px;">
             <a href="./">홈</a>
-            <a href="./about.html">서비스 소개</a>
+            <a href="./guide.html">사용 가이드</a>
+            <a href="./tips.html">번역 팁</a>
+            <a href="./how-it-works.html">기술 소개</a>
+            <a href="./faq-detail.html">FAQ</a>
+            <a href="./about.html">소개</a>
             <a href="./terms.html">이용약관</a>
             <a href="./privacy.html">개인정보 처리방침</a>
             <a href="./contact.html">문의하기</a>
