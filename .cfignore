@@ -1,0 +1,11 @@
+# Cloudflare Pages Ignore
+# Prevent Cloudflare from detecting Python backend files during build
+requirements.txt
+*.py
+uploads/
+outputs/
+__pycache__/
+*.pyc
+test_*.py
+Dockerfile
+docker-compose.yml
