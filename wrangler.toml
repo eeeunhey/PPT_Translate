@@ -1,6 +1,0 @@
-# Cloudflare Pages Configuration
-# This file tells Cloudflare Pages to use cloudflare-pages/ as the output directory
-# and skip any build process (static site only)
-
-name = "ppt-translate"
-pages_build_output_dir = "./cloudflare-pages"
