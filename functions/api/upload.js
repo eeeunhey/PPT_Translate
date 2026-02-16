@@ -30,7 +30,7 @@ export async function onRequest(context) {
         const body = await context.request.arrayBuffer();
         const contentType = context.request.headers.get('Content-Type');
 
-        const response = await fetch(`${NAS_URL}/api/upload`, {
+        const response = await fetch(`${NAS_URL}/upload`, {
             method: 'POST',
             body: body,
             headers: {

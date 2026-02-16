@@ -1,9 +1,20 @@
-export async function onRequestGet(context) {
+export async function onRequest(context) {
+    // CORS preflight 처리
+    if (context.request.method === 'OPTIONS') {
+        return new Response(null, {
+            status: 204,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            },
+        });
+    }
     const NAS_URL = 'https://ppt-translator.hyehey.synology.me';
     const { filename } = context.params;
 
     try {
-        const response = await fetch(`${NAS_URL}/api/download/${encodeURIComponent(filename)}`);
+        const response = await fetch(`${NAS_URL}/download/${encodeURIComponent(filename)}`);
 
         if (!response.ok) {
             return new Response(JSON.stringify({ error: '파일을 찾을 수 없습니다.' }), {
@@ -37,14 +48,3 @@ export async function onRequestGet(context) {
     }
 }
 
-// CORS preflight
-export async function onRequestOptions() {
-    return new Response(null, {
-        status: 204,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-        },
-    });
-}
