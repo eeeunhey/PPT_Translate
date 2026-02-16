@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ppt-translate.pages.dev/sitemap.xml

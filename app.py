@@ -1,6 +1,6 @@
 """
 PPT 한글→영어 번역 웹 애플리케이션
-Flask 메인 서버 (v3 - 슬라이드 미리보기 + 번역 로깅 강화)
+Flask 메인 서버 (v4 - Cloudflare Pages 프론트엔드 지원)
 """
 
 import os
@@ -9,6 +9,7 @@ import json
 import time
 import logging
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_cors import CORS
 
 from ppt_handler import extract_texts, create_translated_pptx
 from translator import translate_texts_batch, contains_korean
@@ -17,7 +18,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB 제한
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB (대용량 PPT 지원)
+
+# CORS 설정: Cloudflare Pages에서의 API 호출 허용
+CORS(app, origins=[
+    "https://ppt-translate.pages.dev",
+    "http://localhost:5000",
+    "http://localhost:8080",
+    "http://127.0.0.1:5000",
+], supports_credentials=True)
 
 # 디렉토리 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +47,7 @@ def favicon():
 
 
 @app.route('/upload', methods=['POST'])
+@app.route('/api/upload', methods=['POST'])
 def upload_and_translate():
     if 'file' not in request.files:
         return jsonify({"success": False, "error": "파일이 업로드되지 않았습니다."}), 400
@@ -185,6 +195,7 @@ def upload_and_translate():
 
 
 @app.route('/download/<filename>')
+@app.route('/api/download/<filename>')
 def download_file(filename):
     file_path = os.path.join(OUTPUT_DIR, filename)
     if not os.path.exists(file_path):
@@ -200,7 +211,8 @@ def download_file(filename):
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("  PPT 한글→영어 번역기 v3")
-    print("  http://localhost:5000 에서 접속하세요")
+    print("  PPT 한글→영어 번역기 v4 (Cloudflare Pages 지원)")
+    print("  로컬 접속: http://localhost:5000")
+    print("  Cloudflare: https://ppt-translate.pages.dev")
     print("=" * 60)
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)

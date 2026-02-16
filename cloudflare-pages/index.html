@@ -4,12 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="PPT Translator - AI가 파워포인트를 자동 번역합니다. 원본 디자인 100% 보존.">
-    <title>PPT Translator — AI 파워포인트 번역</title>
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <title>PPT Translator — Professional Presentation Translation Service</title>
+    <meta name="description" content="PowerPoint 한영 번역 서비스. 원본 디자인 100% 보존, 듀얼뷰 미리보기, 번역 근거 제공.">
+    <meta property="og:title" content="PPT Translator — 파워포인트 자동 번역 서비스">
+    <meta property="og:description" content="PowerPoint 프레젠테이션을 AI로 자동 번역하는 무료 온라인 서비스. 원본 디자인 100% 보존.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ppt-translate.pages.dev/">
+    <link rel="canonical" href="https://ppt-translate.pages.dev/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="./service.css">
 </head>
 
 <body>
@@ -18,7 +26,7 @@
          NAVIGATION
          ═══════════════════════════════════════════ -->
     <nav class="navbar">
-        <a href="/" class="navbar-brand">
+        <a href="./" class="navbar-brand">
             <div class="navbar-logo">T</div>
             <div class="navbar-title">PPT Translator</div>
         </a>
@@ -269,10 +277,10 @@
                     </div>
                 </div>
                 <div class="footer-links">
-                    <a href="/about">소개</a>
-                    <a href="/privacy">개인정보처리방침</a>
-                    <a href="/terms">이용약관</a>
-                    <a href="/contact">문의하기</a>
+                    <a href="./about.html">소개</a>
+                    <a href="./privacy.html">개인정보처리방침</a>
+                    <a href="./terms.html">이용약관</a>
+                    <a href="./contact.html">문의하기</a>
                 </div>
             </div>
             <div class="footer-bottom">© 2025 PPT Translator. All rights reserved.</div>
@@ -291,6 +299,11 @@
     </div>
 
     <script>
+        // ============================================================
+        // ⚙️ API 서버 설정 (NAS 백엔드)
+        // ============================================================
+        const API_BASE = 'https://hyehey.synology.me:5113';
+
         // ============================================================
         // 글로벌 상태
         // ============================================================
@@ -369,7 +382,7 @@
             const formData = new FormData();
             formData.append('file', file);
 
-            fetch('/upload', { method: 'POST', body: formData })
+            fetch(API_BASE + '/api/upload', { method: 'POST', body: formData })
                 .then(r => { updateProgress(90, '응답 처리 중...'); return r.json(); })
                 .then(data => {
                     clearInterval(progressSimulator);
@@ -381,7 +394,7 @@
                         hideProgress(); showError(data.error || '오류가 발생했습니다.');
                     }
                 })
-                .catch(err => { clearInterval(progressSimulator); stopTimer(); hideProgress(); showError('서버 연결 실패. 서버가 실행 중인지 확인하세요.'); });
+                .catch(err => { clearInterval(progressSimulator); stopTimer(); hideProgress(); showError('서버 연결에 실패했습니다. 번역 서버가 실행 중인지 확인해주세요.'); });
         }
 
         // ============================================================
@@ -461,8 +474,32 @@
                     </div>`;
             }
 
-            // 다운로드
-            document.getElementById('downloadBtn').href = '/download/' + encodeURIComponent(data.filename);
+            // Blob 다운로드: NAS URL을 사용자에게 노출하지 않음
+            const dlBtn = document.getElementById('downloadBtn');
+            dlBtn.href = '#';
+            dlBtn.onclick = function (e) {
+                e.preventDefault();
+                dlBtn.textContent = '⏳ 다운로드 준비 중...';
+                dlBtn.style.pointerEvents = 'none';
+                fetch(API_BASE + '/api/download/' + encodeURIComponent(data.filename))
+                    .then(r => r.blob())
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = data.filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        dlBtn.textContent = '⬇️ 번역된 PPT 다운로드';
+                        dlBtn.style.pointerEvents = '';
+                    })
+                    .catch(() => {
+                        dlBtn.textContent = '❌ 다운로드 실패 - 다시 시도';
+                        dlBtn.style.pointerEvents = '';
+                    });
+            };
 
             // 초기 뷰 렌더링
             updateSlideNav();

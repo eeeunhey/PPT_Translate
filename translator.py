@@ -1,17 +1,24 @@
 """
-번역 엔진 모듈 (안정화 버전 v2)
-- deep-translator (Google Translate 무료)를 사용하여 한글→영어 번역
-- 번역 근거(단어별 의미 분해) 생성
+번역 엔진 모듈 (안정화 버전 v3 - 자동 Fallback)
+- 1순위: Google Translate (무료, 품질 좋음)
+- 2순위: MyMemory (Google 차단 시 자동 전환)
 - 배치 번역 + 재시도 로직 + 미번역 감지
 """
 
 import re
 import time
 import logging
-from deep_translator import GoogleTranslator
+from deep_translator import GoogleTranslator, MyMemoryTranslator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# 번역 엔진 상태
+_engine_state = {
+    "current": "google",       # 현재 사용 중인 엔진
+    "google_failures": 0,      # Google 연속 실패 횟수
+    "fallback_threshold": 3,   # 이 횟수 이상 실패하면 MyMemory로 전환
+}
 
 
 def contains_korean(text: str) -> bool:
@@ -27,15 +34,26 @@ def split_korean_words(text: str) -> list:
     return [w for w in words if w.strip()]
 
 
-def _create_translator():
-    """매 배치마다 새 인스턴스 생성 (연결 문제 방지)"""
-    return GoogleTranslator(source='ko', target='en')
+
+def _create_translator(source='ko', target='en'):
+    """현재 엔진에 맞는 번역기 인스턴스 생성"""
+    if _engine_state["current"] == "google":
+        return GoogleTranslator(source=source, target=target)
+    else:
+        return MyMemoryTranslator(source=source, target=target)
+
+
+def _switch_to_fallback():
+    """Google → MyMemory로 전환"""
+    if _engine_state["current"] == "google":
+        _engine_state["current"] = "mymemory"
+        logger.warning("⚠️ Google Translate 차단 감지 → MyMemory로 자동 전환합니다.")
 
 
 def _safe_translate(text: str, max_retries: int = 3) -> str:
     """
-    단일 텍스트 번역 (재시도 로직 포함).
-    실패 시 원문 그대로 반환.
+    단일 텍스트 번역 (재시도 + 자동 Fallback).
+    Google 실패 시 MyMemory로 자동 전환.
     """
     if not text or not text.strip():
         return text
@@ -45,13 +63,31 @@ def _safe_translate(text: str, max_retries: int = 3) -> str:
             translator = _create_translator()
             result = translator.translate(text)
             if result and result.strip():
+                # 성공 시 Google 실패 카운터 리셋
+                if _engine_state["current"] == "google":
+                    _engine_state["google_failures"] = 0
                 return result
         except Exception as e:
-            wait_time = (attempt + 1) * 1.0  # 1초, 2초, 3초
-            logger.warning(f"번역 재시도 {attempt+1}/{max_retries}: '{text[:30]}...' 에러: {e}")
+            logger.warning(f"번역 재시도 {attempt+1}/{max_retries} [{_engine_state['current']}]: '{text[:30]}...' 에러: {e}")
+            
+            # Google 실패 카운터 증가
+            if _engine_state["current"] == "google":
+                _engine_state["google_failures"] += 1
+                if _engine_state["google_failures"] >= _engine_state["fallback_threshold"]:
+                    _switch_to_fallback()
+                    # MyMemory로 바로 재시도
+                    try:
+                        translator = _create_translator()
+                        result = translator.translate(text)
+                        if result and result.strip():
+                            return result
+                    except Exception as e2:
+                        logger.warning(f"MyMemory도 실패: {e2}")
+            
+            wait_time = (attempt + 1) * 1.0
             time.sleep(wait_time)
     
-    logger.error(f"번역 최종 실패: '{text[:50]}'")
+    logger.error(f"번역 최종 실패 [{_engine_state['current']}]: '{text[:50]}'")
     return text  # 원문 반환 (미번역으로 표시됨)
 
 
@@ -230,7 +266,8 @@ def _batch_translate_safe(texts: list, chunk_size: int = 10) -> list:
         
         # 청크 간 대기 (rate limit 방지)
         if i + chunk_size < len(texts):
-            time.sleep(0.8)
+            delay = 0.8 if _engine_state["current"] == "google" else 1.2  # MyMemory는 더 긴 대기
+            time.sleep(delay)
     
     return all_results
 
