@@ -9,7 +9,8 @@ ENV LANG=C.UTF-8
 WORKDIR /app
 
 # 의존성 먼저 복사 (Docker 캐시 최적화)
-COPY requirements.txt .
+# NOTE: requirements.txt는 server/ 폴더에 위치 (Cloudflare Pages 빌드 충돌 방지)
+COPY server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 앱 소스 복사
