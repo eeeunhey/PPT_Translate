@@ -30,13 +30,20 @@ export async function onRequest(context) {
         const body = await context.request.arrayBuffer();
         const contentType = context.request.headers.get('Content-Type');
 
+        // 5분 타임아웃 설정 (번역은 시간이 오래 걸릴 수 있음)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5분
+
         const response = await fetch(`${NAS_URL}/upload`, {
             method: 'POST',
             body: body,
             headers: {
                 'Content-Type': contentType,
             },
+            signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         const data = await response.text();
 
@@ -48,13 +55,19 @@ export async function onRequest(context) {
             },
         });
     } catch (err) {
+        // AbortError = 타임아웃
+        const isTimeout = err.name === 'AbortError';
+        const errorMessage = isTimeout
+            ? '번역 처리 시간이 초과되었습니다. 파일 크기를 줄이거나 슬라이드 수를 줄여서 다시 시도해주세요.'
+            : '서버 연결 실패';
+
         return new Response(JSON.stringify({
             success: false,
-            error: '서버 연결 실패',
+            error: errorMessage,
             debug: err.message || String(err),
-            stack: err.stack || '',
+            errorType: isTimeout ? 'TIMEOUT' : 'CONNECTION_ERROR',
         }), {
-            status: 502,
+            status: isTimeout ? 504 : 502,
             headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',

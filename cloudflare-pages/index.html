@@ -384,9 +384,14 @@
             const formData = new FormData();
             formData.append('file', file);
 
-            fetch(API_BASE + '/api/upload', { method: 'POST', body: formData })
+            // 5분 타임아웃 (번역은 시간이 오래 걸릴 수 있음)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 300000);
+
+            fetch(API_BASE + '/api/upload', { method: 'POST', body: formData, signal: controller.signal })
                 .then(r => { updateProgress(90, '응답 처리 중...'); return r.json(); })
                 .then(data => {
+                    clearTimeout(timeoutId);
                     clearInterval(progressSimulator);
                     stopTimer();
                     if (data.success) {
@@ -396,7 +401,17 @@
                         hideProgress(); showError(data.error || '오류가 발생했습니다.');
                     }
                 })
-                .catch(err => { clearInterval(progressSimulator); stopTimer(); hideProgress(); showError('서버 연결에 실패했습니다. 번역 서버가 실행 중인지 확인해주세요.'); });
+                .catch(err => {
+                    clearTimeout(timeoutId);
+                    clearInterval(progressSimulator);
+                    stopTimer();
+                    hideProgress();
+                    if (err.name === 'AbortError') {
+                        showError('번역 처리 시간이 초과되었습니다 (5분). 슬라이드 수를 줄이거나 파일 크기를 줄여서 다시 시도해주세요.');
+                    } else {
+                        showError('서버 연결에 실패했습니다. 번역 서버가 실행 중인지 확인해주세요.');
+                    }
+                });
         }
 
         // ============================================================
@@ -484,12 +499,21 @@
                 dlBtn.textContent = '⏳ 다운로드 준비 중...';
                 dlBtn.style.pointerEvents = 'none';
                 fetch(API_BASE + '/api/download/' + encodeURIComponent(data.filename))
-                    .then(r => r.blob())
+                    .then(r => {
+                        if (!r.ok) {
+                            throw new Error('다운로드 실패: 파일을 찾을 수 없습니다. (HTTP ' + r.status + ')');
+                        }
+                        return r.blob();
+                    })
                     .then(blob => {
+                        // Blob 크기 검증 - 너무 작으면 에러 응답일 수 있음
+                        if (blob.size < 1000) {
+                            throw new Error('다운로드된 파일이 손상되었습니다. 다시 번역을 시도해주세요.');
+                        }
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = data.filename;
+                        a.download = data.original_name ? data.original_name.replace('.pptx', '_translated.pptx') : data.filename;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
@@ -497,9 +521,10 @@
                         dlBtn.textContent = '⬇️ 번역된 PPT 다운로드';
                         dlBtn.style.pointerEvents = '';
                     })
-                    .catch(() => {
+                    .catch(err => {
                         dlBtn.textContent = '❌ 다운로드 실패 - 다시 시도';
                         dlBtn.style.pointerEvents = '';
+                        showError(err.message || '다운로드에 실패했습니다. 다시 번역해주세요.');
                     });
             };
 

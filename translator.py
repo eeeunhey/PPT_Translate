@@ -84,7 +84,7 @@ def _safe_translate(text: str, max_retries: int = 3) -> str:
                     except Exception as e2:
                         logger.warning(f"MyMemory도 실패: {e2}")
             
-            wait_time = (attempt + 1) * 1.0
+            wait_time = (attempt + 1) * 1.5
             time.sleep(wait_time)
     
     logger.error(f"번역 최종 실패 [{_engine_state['current']}]: '{text[:50]}'")
@@ -230,11 +230,11 @@ def translate_texts_batch(texts: list, source_lang='auto', target_lang='en', pro
     return results
 
 
-def _batch_translate_safe(texts: list, chunk_size: int = 10) -> list:
+def _batch_translate_safe(texts: list, chunk_size: int = 5) -> list:
     """
     여러 텍스트를 구분자로 묶어 번역. 실패 시 개별 번역으로 폴백.
     
-    chunk_size를 10으로 줄여 rate limit 회피.
+    chunk_size를 5으로 줄여 rate limit 회피.
     """
     all_results = []
     
@@ -266,7 +266,7 @@ def _batch_translate_safe(texts: list, chunk_size: int = 10) -> list:
         
         # 청크 간 대기 (rate limit 방지)
         if i + chunk_size < len(texts):
-            delay = 0.8 if _engine_state["current"] == "google" else 1.2  # MyMemory는 더 긴 대기
+            delay = 1.5 if _engine_state["current"] == "google" else 2.0  # rate limit 방지 대기
             time.sleep(delay)
     
     return all_results
@@ -278,7 +278,7 @@ def _fallback_individual(texts: list) -> list:
     for text in texts:
         translated = _safe_translate(text)
         results.append(translated)
-        time.sleep(0.5)  # 개별 번역 간 대기
+        time.sleep(1.0)  # 개별 번역 간 대기 (rate limit 방지)
     return results
 
 

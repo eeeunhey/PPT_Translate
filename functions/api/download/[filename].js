@@ -26,12 +26,18 @@ export async function onRequest(context) {
             });
         }
 
-        return new Response(response.body, {
+        // 바이너리 데이터를 완전히 읽은 후 전달 (스트리밍 대신 arrayBuffer 사용)
+        // → PPT 파일 손상 방지
+        const fileData = await response.arrayBuffer();
+
+        return new Response(fileData, {
             status: 200,
             headers: {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                'Content-Disposition': `attachment; filename="${filename}"`,
+                'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+                'Content-Length': fileData.byteLength.toString(),
                 'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache',
             },
         });
     } catch (err) {
@@ -47,4 +53,3 @@ export async function onRequest(context) {
         });
     }
 }
-

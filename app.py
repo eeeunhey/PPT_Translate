@@ -40,7 +40,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # 파일 보존 시간 (초) - 이 시간이 지나면 자동 삭제
-FILE_MAX_AGE = 3600        # 1시간
+FILE_MAX_AGE = 7200        # 2시간
 CLEANUP_INTERVAL = 1800    # 30분마다 정리 실행
 
 
@@ -268,7 +268,7 @@ def download_file(filename):
         except Exception:
             pass
 
-    Timer(60, cleanup).start()
+    Timer(300, cleanup).start()  # 5분 후 삭제 (다운로드 완료 대기)
 
     return send_file(
         file_path,
