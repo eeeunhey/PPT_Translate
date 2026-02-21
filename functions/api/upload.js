@@ -30,9 +30,9 @@ export async function onRequest(context) {
         const body = await context.request.arrayBuffer();
         const contentType = context.request.headers.get('Content-Type');
 
-        // 5분 타임아웃 설정 (번역은 시간이 오래 걸릴 수 있음)
+        // 30초 타임아웃 (비동기 처리이므로 업로드만 하면 즉시 응답)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5분
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         const response = await fetch(`${NAS_URL}/upload`, {
             method: 'POST',
@@ -55,17 +55,14 @@ export async function onRequest(context) {
             },
         });
     } catch (err) {
-        // AbortError = 타임아웃
         const isTimeout = err.name === 'AbortError';
-        const errorMessage = isTimeout
-            ? '번역 처리 시간이 초과되었습니다. 파일 크기를 줄이거나 슬라이드 수를 줄여서 다시 시도해주세요.'
-            : '서버 연결 실패';
 
         return new Response(JSON.stringify({
             success: false,
-            error: errorMessage,
+            error: isTimeout
+                ? '파일 업로드 시간이 초과되었습니다. 파일 크기를 확인해주세요.'
+                : '서버 연결 실패',
             debug: err.message || String(err),
-            errorType: isTimeout ? 'TIMEOUT' : 'CONNECTION_ERROR',
         }), {
             status: isTimeout ? 504 : 502,
             headers: {

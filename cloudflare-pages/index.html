@@ -361,57 +361,83 @@
         // ============================================================
         // 파일 처리
         // ============================================================
+        let pollInterval = null;
+
         function handleFile(file) {
             if (!file.name.toLowerCase().endsWith('.pptx')) { showError('PPTX 파일만 지원합니다.'); return; }
             if (file.size > 50 * 1024 * 1024) { showError('파일 크기가 50MB를 초과합니다.'); return; }
 
             hideError(); showProgress(); startTimer();
-            updateProgress(10, '파일 업로드 중...');
-
-            let simulatedProgress = 10;
-            const progressSimulator = setInterval(() => {
-                if (simulatedProgress < 85) {
-                    simulatedProgress += Math.random() * 3 + 0.5;
-                    simulatedProgress = Math.min(simulatedProgress, 85);
-                    const step = simulatedProgress < 30 ? '파일 업로드 중...'
-                        : simulatedProgress < 50 ? '텍스트 추출 중...'
-                            : simulatedProgress < 70 ? '번역 처리 중...'
-                                : 'PPT 생성 중...';
-                    updateProgress(Math.round(simulatedProgress), step);
-                }
-            }, 800);
+            updateProgress(5, '파일 업로드 중...');
 
             const formData = new FormData();
             formData.append('file', file);
 
-            // 5분 타임아웃 (번역은 시간이 오래 걸릴 수 있음)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 300000);
-
-            fetch(API_BASE + '/api/upload', { method: 'POST', body: formData, signal: controller.signal })
-                .then(r => { updateProgress(90, '응답 처리 중...'); return r.json(); })
+            // 1단계: 파일 업로드 → job_id 즉시 반환
+            fetch(API_BASE + '/api/upload', { method: 'POST', body: formData })
+                .then(r => r.json())
                 .then(data => {
-                    clearTimeout(timeoutId);
-                    clearInterval(progressSimulator);
-                    stopTimer();
-                    if (data.success) {
-                        updateProgress(100, '번역 완료!');
-                        setTimeout(() => { translationData = data; showResults(data); }, 400);
+                    if (data.success && data.job_id) {
+                        updateProgress(10, '번역 시작됨, 진행 중...');
+                        // 2단계: 폴링으로 진행 상태 확인
+                        pollJobStatus(data.job_id);
                     } else {
-                        hideProgress(); showError(data.error || '오류가 발생했습니다.');
+                        stopTimer(); hideProgress();
+                        showError(data.error || '업로드에 실패했습니다.');
                     }
                 })
                 .catch(err => {
-                    clearTimeout(timeoutId);
-                    clearInterval(progressSimulator);
-                    stopTimer();
-                    hideProgress();
-                    if (err.name === 'AbortError') {
-                        showError('번역 처리 시간이 초과되었습니다 (5분). 슬라이드 수를 줄이거나 파일 크기를 줄여서 다시 시도해주세요.');
-                    } else {
-                        showError('서버 연결에 실패했습니다. 번역 서버가 실행 중인지 확인해주세요.');
-                    }
+                    stopTimer(); hideProgress();
+                    showError('서버 연결에 실패했습니다. 번역 서버가 실행 중인지 확인해주세요.');
                 });
+        }
+
+        function pollJobStatus(jobId) {
+            let failCount = 0;
+            const maxFails = 5;
+
+            pollInterval = setInterval(() => {
+                fetch(API_BASE + '/api/status/' + jobId)
+                    .then(r => r.json())
+                    .then(data => {
+                        failCount = 0; // 성공 시 리셋
+
+                        // 실시간 진행 업데이트
+                        if (data.progress !== undefined) {
+                            updateProgress(data.progress, data.step || '처리 중...');
+                        }
+
+                        if (data.status === 'complete' && data.result) {
+                            // 번역 완료!
+                            clearInterval(pollInterval);
+                            pollInterval = null;
+                            stopTimer();
+                            updateProgress(100, '번역 완료!');
+                            setTimeout(() => {
+                                translationData = data.result;
+                                showResults(data.result);
+                            }, 400);
+                        } else if (data.status === 'error') {
+                            // 번역 실패
+                            clearInterval(pollInterval);
+                            pollInterval = null;
+                            stopTimer();
+                            hideProgress();
+                            showError(data.error || '번역 중 오류가 발생했습니다.');
+                        }
+                        // status === 'processing' → 계속 폴링
+                    })
+                    .catch(() => {
+                        failCount++;
+                        if (failCount >= maxFails) {
+                            clearInterval(pollInterval);
+                            pollInterval = null;
+                            stopTimer();
+                            hideProgress();
+                            showError('서버 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.');
+                        }
+                    });
+            }, 2000); // 2초마다 폴링
         }
 
         // ============================================================
@@ -540,6 +566,7 @@
         // ============================================================
         function resetUI() {
             stopTimer(); hideProgress(); hideError();
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
             currentSlide = 0; currentTab = 'slideview'; translationData = null;
 
             document.getElementById('resultSection').style.display = 'none';
